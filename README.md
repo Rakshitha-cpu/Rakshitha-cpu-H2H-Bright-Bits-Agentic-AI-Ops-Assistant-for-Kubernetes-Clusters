@@ -197,20 +197,24 @@ AI:  1. Fix crashloop: kubectl patch deployment...
 
 ---
 
-├── agent/
-│   └── agent.py            # AI agent ReAct loop
-├── cluster/
-│   └── setup.sh            # Cluster setup script
-├── faults/
-│   └── faults.yaml         # Contains 4 injected faults
-├── logs/
-│   └── agent.log           # Transparency and execution logs
-├── ui/
-│   └── app.py              # Streamlit web interface
-├── README.md               # Project documentation
-├── report.md               # One-page project write-up
-└── requirements.txt        # Python dependencies
+## Project Structure
 
+```bash
+.
+├── agent
+│   └── agent.py
+├── cluster
+│   └── setup.sh
+├── faults
+│   └── faults.yaml
+├── logs
+│   └── agent.log
+├── ui
+│   └── app.py
+├── README.md
+├── report.md
+└── requirements.txt
+```
 ---
 
 ## 📈 Scaling to 200+ Services
