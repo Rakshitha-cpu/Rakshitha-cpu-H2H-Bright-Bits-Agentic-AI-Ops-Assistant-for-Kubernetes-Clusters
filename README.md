@@ -189,31 +189,31 @@ AI:  1. Fix crashloop: kubectl patch deployment...
 
 ---
 
-## 📝 Transparency Logging
+## Transparency Logging
+
+```text
 2026-04-19 10:23:01 - USER QUERY: Which pods are not running?
 2026-04-19 10:23:01 - TOOL CALL: kubectl get pods
 2026-04-19 10:23:02 - TOOL RESULT: NAME READY STATUS...
-2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running...
-
----
+2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running.
+```
 
 ## Project Structure
 
-```bash
-.
-├── agent
-│   └── agent.py
-├── cluster
-│   └── setup.sh
-├── faults
-│   └── faults.yaml
-├── logs
-│   └── agent.log
-├── ui
-│   └── app.py
-├── README.md
-├── report.md
-└── requirements.txt
+```text
+├── agent/
+│   └── agent.py            # AI agent ReAct loop
+├── cluster/
+│   └── setup.sh            # Cluster setup script
+├── faults/
+│   └── faults.yaml         # Contains 4 injected faults
+├── logs/
+│   └── agent.log           # Transparency and execution logs
+├── ui/
+│   └── app.py              # Streamlit web interface
+├── README.md               # Project documentation
+├── report.md               # One-page project write-up
+└── requirements.txt        # Python dependencies
 ```
 ---
 
