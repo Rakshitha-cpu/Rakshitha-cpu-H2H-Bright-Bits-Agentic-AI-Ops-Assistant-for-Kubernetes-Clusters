@@ -197,10 +197,6 @@ AI:  1. Fix crashloop: kubectl patch deployment...
 
 ---
 
-## Project Structure
-
-text
-
 ├── agent/
 │   └── agent.py            # AI agent ReAct loop
 ├── cluster/
