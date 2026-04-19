@@ -259,7 +259,7 @@ Hackathon: H2H Bright Bits — AI/DevOps Track
 ---
 
 ## Team Members
-Rakshitha R
+Rakshitha R,
 poojary Nisarga Arun
 
 ---
