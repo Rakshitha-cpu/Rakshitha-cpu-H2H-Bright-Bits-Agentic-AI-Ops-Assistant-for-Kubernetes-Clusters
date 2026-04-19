@@ -291,3 +291,420 @@ Let's analyze each pod and provide a diagnosis and exact fix commands.
 ### Pod 1: `crashloop-app-5dc44ff445-4fflq`
 
 The `crashloop-app-5dc44ff445-4fflq` p
+2026-04-19 09:00:45,027 - USER QUERY: Question 1 → Which pods are not running and why?
+
+Question 2 → Why is pending-pod stuck?
+
+Question 3 → Is broken-service routing traffic correctly?
+
+Question 4 → What about the staging namespace?
+
+Question 5 → How do I fix all the issues you found?
+2026-04-19 09:00:45,865 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:00:45,902 - TOOL CALL: kubectl get pods --all-namespaces
+2026-04-19 09:00:46,784 - TOOL RESULT: NAMESPACE              NAME                                         READY   STATUS             RESTARTS         AGE
+default                adservice-64dd5464b8-ldt6r                   1/1     Running            1 (86m ago)      17h
+default                cartservice-7956c8c845-hr54b                 
+2026-04-19 09:00:46,784 - TOOL CALL: kubectl get pods -o wide
+2026-04-19 09:00:46,928 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+adservice-64dd5464b8-ldt6r              1/1     Running            1 (86m ago)      17h   10.244.0.28   minikube   <none>           <none>
+cartservice-7
+2026-04-19 09:00:46,928 - TOOL CALL: kubectl describe pod pending-pod
+2026-04-19 09:00:47,066 - TOOL RESULT: Name:             pending-pod
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           <none>
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Containers:
+  resource-hog:
+    Image:      nginx
+   
+2026-04-19 09:00:47,066 - TOOL CALL: kubectl get svc broken-service -o yaml
+2026-04-19 09:00:47,151 - TOOL RESULT: apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"broken-service","namespace":"default"},"spec":{"ports":[{"port":80}],"selector":{"app":"nonexistent-app"}}}
+  c
+2026-04-19 09:00:47,151 - TOOL CALL: kubectl get svc broken-service -o wide
+2026-04-19 09:00:47,228 - TOOL RESULT: NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+broken-service   ClusterIP   10.97.224.112   <none>        80/TCP    83m   app=nonexistent-app
+
+2026-04-19 09:00:47,228 - TOOL CALL: kubectl get endpoints broken-service
+2026-04-19 09:00:47,308 - TOOL RESULT: NAME             ENDPOINTS   AGE
+broken-service   <none>      83m
+
+2026-04-19 09:00:47,309 - TOOL CALL: kubectl get deployments -n staging
+2026-04-19 09:00:47,378 - TOOL RESULT: No resources found in staging namespace.
+
+2026-04-19 09:00:47,379 - TOOL CALL: kubectl get pods -n staging
+2026-04-19 09:00:47,456 - TOOL RESULT: No resources found in staging namespace.
+
+2026-04-19 09:00:47,456 - TOOL CALL: kubectl get svc -n staging
+2026-04-19 09:00:47,538 - TOOL RESULT: No resources found in staging namespace.
+
+2026-04-19 09:00:47,538 - TOOL CALL: kubectl describe svc broken-service
+2026-04-19 09:00:47,647 - TOOL RESULT: Name:              broken-service
+Namespace:         default
+Labels:            <none>
+Annotations:       <none>
+Selector:          app=nonexistent-app
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                10.97.224.112
+IPs:               10.97.224.11
+2026-04-19 09:00:47,648 - TOOL CALL: kubectl describe pod pending-pod
+2026-04-19 09:00:47,752 - TOOL RESULT: Name:             pending-pod
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           <none>
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Containers:
+  resource-hog:
+    Image:      nginx
+   
+2026-04-19 09:00:47,752 - TOOL CALL: kubectl get events --all-namespaces
+2026-04-19 09:00:47,844 - TOOL RESULT: NAMESPACE   LAST SEEN   TYPE      REASON             OBJECT                                MESSAGE
+default     52m         Warning   Unhealthy          pod/checkoutservice-dcf4c5c7b-cl82v   Liveness probe failed: timeout: health rpc did not complete within 1s
+default     0s          Normal    Pullin
+2026-04-19 09:00:47,844 - TOOL CALL: kubectl get nodes
+2026-04-19 09:00:47,934 - TOOL RESULT: NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   17h   v1.35.1
+
+2026-04-19 09:00:50,379 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:00:50,381 - FINAL ANSWER: ### Diagnosis
+
+1. **Pods that are not running:**
+   - `crashloop-app-5dc44ff445-4fflq` is in a `CrashLoopBackOff` state, indicating that the container is crashing repeatedly.
+   - `pending-pod` is in a `Pending` state, indicating that it is waiting for resources to be available.
+
+2. **Why is `pendin
+2026-04-19 09:01:20,851 - USER QUERY: Which pods are not running and why?
+2026-04-19 09:01:21,274 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:01:21,274 - TOOL CALL: kubectl get pods
+2026-04-19 09:01:21,642 - TOOL RESULT: NAME                                    READY   STATUS    RESTARTS         AGE
+adservice-64dd5464b8-ldt6r              1/1     Running   1 (86m ago)      17h
+cartservice-7956c8c845-hr54b            1/1     Running   1 (86m ago)      17h
+checkoutservice-dcf4c5c7b-cl82v         1/1     Running   1 (86
+2026-04-19 09:01:21,642 - TOOL CALL: kubectl describe pods
+2026-04-19 09:01:21,948 - TOOL RESULT: Name:             adservice-64dd5464b8-ldt6r
+Namespace:        default
+Priority:         0
+Service Account:  adservice
+Node:             minikube/192.168.49.2
+Start Time:       Sat, 18 Apr 2026 15:05:30 +0000
+Labels:           app=adservice
+                  pod-template-hash=64dd5464b8
+Annotations:
+2026-04-19 09:01:21,948 - TOOL CALL: kubectl get events --all-namespaces
+2026-04-19 09:01:22,012 - TOOL RESULT: NAMESPACE   LAST SEEN   TYPE      REASON             OBJECT                                MESSAGE
+default     53m         Warning   Unhealthy          pod/checkoutservice-dcf4c5c7b-cl82v   Liveness probe failed: timeout: health rpc did not complete within 1s
+default     35s         Normal    Pullin
+2026-04-19 09:01:22,012 - TOOL CALL: kubectl get deployments
+2026-04-19 09:01:22,081 - TOOL RESULT: NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+adservice               1/1     1            1           17h
+cartservice             1/1     1            1           17h
+checkoutservice         1/1     1            1           17h
+crashloop-app           0/1     1            0          
+2026-04-19 09:01:22,081 - TOOL CALL: kubectl get replicasets
+2026-04-19 09:01:22,150 - TOOL RESULT: NAME                              DESIRED   CURRENT   READY   AGE
+adservice-64dd5464b8              1         1         1       17h
+cartservice-7956c8c845            1         1         1       17h
+checkoutservice-dcf4c5c7b         1         1         1       17h
+crashloop-app-5dc44ff445          1 
+2026-04-19 09:01:22,150 - TOOL CALL: kubectl get nodes
+2026-04-19 09:01:22,215 - TOOL RESULT: NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   17h   v1.35.1
+
+2026-04-19 09:01:22,383 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 413 Payload Too Large"
+2026-04-19 09:03:32,590 - USER QUERY: Which pods are not running and why?
+2026-04-19 09:03:32,596 - TOOL CALL: kubectl get pods
+2026-04-19 09:03:32,981 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:03:32,981 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp' | tail -5
+2026-04-19 09:03:33,078 - TOOL RESULT: 13m         Warning   Unhealthy          pod/frontend-759775d795-275sv         Liveness probe failed
+2026-04-19 09:03:34,099 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:03:34,229 - FINAL ANSWER: **Diagnosis:** The pod `frontend-759775d795-275sv` is not running due to a failed liveness probe, causing it to be terminated and restarted. The pod `
+2026-04-19 09:04:42,846 - USER QUERY: Why is pending-pod stuck?
+2026-04-19 09:04:42,847 - TOOL CALL: kubectl get pods
+2026-04-19 09:04:42,968 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:04:42,968 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp' | tail -5
+2026-04-19 09:04:43,039 - TOOL RESULT: 14m         Warning   Unhealthy          pod/frontend-759775d795-275sv         Liveness probe failed
+2026-04-19 09:04:44,133 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:04:44,135 - FINAL ANSWER: **Diagnosis:** The pod is not stuck, the provided events are related to a different pod (`frontend-759775d795-275sv`) and do not pertain to the `adser
+2026-04-19 09:05:09,389 - USER QUERY: Is broken-service routing traffic correctly?
+2026-04-19 09:05:09,389 - TOOL CALL: kubectl get pods
+2026-04-19 09:05:09,497 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:05:09,497 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp' | tail -5
+2026-04-19 09:05:09,554 - TOOL RESULT: 15m         Warning   Unhealthy          pod/frontend-759775d795-275sv         Liveness probe failed
+2026-04-19 09:05:10,524 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:05:10,527 - FINAL ANSWER: **Diagnosis:** The `frontend` pod is failing its liveness probe, indicating a potential issue with the application or its configuration, which may be 
+2026-04-19 09:05:44,642 - USER QUERY: What about the staging namespace?
+2026-04-19 09:05:44,643 - TOOL CALL: kubectl get pods
+2026-04-19 09:05:44,725 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:05:44,725 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp' | tail -5
+2026-04-19 09:05:44,782 - TOOL RESULT: 16m         Warning   Unhealthy          pod/frontend-759775d795-275sv         Liveness probe failed
+2026-04-19 09:05:56,367 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:05:56,369 - FINAL ANSWER: Diagnosis: The liveness probe for the frontend pod in the staging namespace has failed, indicating the pod is not responding as expected.
+
+Fix: 
+1. `k
+2026-04-19 09:06:24,927 - USER QUERY: How do I fix all the issues you found?
+2026-04-19 09:06:24,931 - TOOL CALL: kubectl get pods
+2026-04-19 09:06:25,023 - TOOL RESULT: NAME                                    READY   STATUS    RESTARTS         AGE
+adservice-64dd5464b8-
+2026-04-19 09:06:25,023 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp' | tail -5
+2026-04-19 09:06:25,080 - TOOL RESULT: 16m         Warning   Unhealthy          pod/frontend-759775d795-275sv         Liveness probe failed
+2026-04-19 09:06:26,761 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:06:26,763 - FINAL ANSWER: **Diagnosis:** Liveness probe failed for the frontend pod, indicating the container is not responding or unhealthy.
+
+**Fix:**
+
+1. **Check pod logs:** 
+2026-04-19 09:19:06,401 - USER QUERY: Which pods are not running?
+2026-04-19 09:19:06,402 - TOOL CALL: kubectl get pods
+2026-04-19 09:19:06,736 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:19:06,736 - SENDING 2 messages to LLM
+2026-04-19 09:19:07,629 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:19:07,641 - FINAL ANSWER: Diagnosis: The 'adservice-64' pod is not running, but the output is incomplete. The 'READY' and 'STATUS' columns are partially missing.
+
+To get the complete status, run: 
+```bash
+kubectl get pods
+```
+
+2026-04-19 09:19:19,385 - USER QUERY: Why is that happening?
+2026-04-19 09:19:19,385 - TOOL CALL: kubectl get pods
+2026-04-19 09:19:19,463 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:19:19,463 - SENDING 4 messages to LLM
+2026-04-19 09:19:21,128 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:19:21,129 - FINAL ANSWER: Diagnosis: The 'adservice-64' pod is not showing a complete status, indicating that it may not have started or is in a pending state. 
+
+To investigate further, run: 
+```bash
+kubectl describe pod adser
+2026-04-19 09:19:29,453 - USER QUERY: What about the staging namespace?
+2026-04-19 09:19:29,453 - TOOL CALL: kubectl get pods
+2026-04-19 09:19:29,530 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS       AGE
+adservice-64dd
+2026-04-19 09:19:29,530 - TOOL CALL: kubectl get pods -n staging
+2026-04-19 09:19:29,591 - TOOL RESULT: No resources found in staging namespace.
+
+2026-04-19 09:19:29,591 - SENDING 6 messages to LLM
+2026-04-19 09:19:30,435 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:19:30,437 - FINAL ANSWER: Diagnosis: There are no pods running in the 'staging' namespace.
+
+Fix: To create a pod in the 'staging' namespace, first create a deployment or pod configuration file (e.g., deployment.yaml), then run
+2026-04-19 09:19:39,567 - USER QUERY: How do I fix all of this?How do I fix all of this?
+2026-04-19 09:19:39,567 - TOOL CALL: kubectl get pods
+2026-04-19 09:19:39,642 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:19:39,642 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp'
+2026-04-19 09:19:39,701 - TOOL RESULT: LAST SEEN   TYPE      REASON             OBJECT                                MESSAGE
+20m         W
+2026-04-19 09:19:39,701 - SENDING 8 messages to LLM
+2026-04-19 09:19:40,572 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:19:40,573 - FINAL ANSWER: Diagnosis: The 'adservice-64' pod is not running and not showing any detailed status information. The events section is incomplete. 
+
+To get more information about the pod, run: 
+```bash
+kubectl descr
+2026-04-19 09:21:31,869 - USER QUERY: is services are okay
+2026-04-19 09:21:31,871 - TOOL CALL: kubectl get pods
+2026-04-19 09:21:32,088 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS        AGE
+adservice-64d
+2026-04-19 09:21:32,088 - TOOL CALL: kubectl get endpoints
+2026-04-19 09:21:32,177 - TOOL RESULT: NAME                    ENDPOINTS           AGE
+adservice               10.244.0.28:9555    18h
+brok
+2026-04-19 09:21:32,177 - SENDING 8 messages to LLM
+2026-04-19 09:21:33,113 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:21:33,116 - FINAL ANSWER: Diagnosis: The 'adservice' pod is not fully ready and its status is incomplete. The 'adservice' endpoint is showing an IP address, but the pod is not fully functional.
+
+Fix: To check the service and e
+2026-04-19 09:21:48,342 - USER QUERY: why pods stuck sometimes
+2026-04-19 09:21:48,342 - TOOL CALL: kubectl get pods
+2026-04-19 09:21:48,523 - TOOL RESULT: NAME                                    READY   STATUS    RESTARTS         AGE
+adservice-64dd5464b8-
+2026-04-19 09:21:48,523 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp'
+2026-04-19 09:21:48,589 - TOOL RESULT: LAST SEEN   TYPE      REASON             OBJECT                                MESSAGE
+22m         W
+2026-04-19 09:21:48,589 - SENDING 8 messages to LLM
+2026-04-19 09:21:49,495 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:21:49,497 - FINAL ANSWER: Diagnosis: The 'adservice-64dd5464b8-' pod is stuck in an unknown state, likely due to a pending or terminating state. The 'W' reason in the events section indicates a warning, but the message is trun
+2026-04-19 09:24:18,253 - USER QUERY: 'what about the other
+2026-04-19 09:24:18,260 - TOOL CALL: kubectl get pods
+2026-04-19 09:24:18,487 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:24:18,487 - SENDING 8 messages to LLM
+2026-04-19 09:24:19,420 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:24:19,429 - FINAL ANSWER: Diagnosis: The 'adservice-64' pod is not fully ready, with a status of 0/1, indicating that the container is not running or is not healthy.
+
+Fix: To diagnose the issue, run:
+```bash
+kubectl describe p
+2026-04-19 09:24:39,323 - USER QUERY: namespace?'tell me about yourself
+2026-04-19 09:24:39,324 - TOOL CALL: kubectl get pods
+2026-04-19 09:24:39,408 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS        AGE
+adservice-64d
+2026-04-19 09:24:39,408 - TOOL CALL: kubectl get pods -n staging
+2026-04-19 09:24:39,470 - TOOL RESULT: No resources found in staging namespace.
+
+2026-04-19 09:24:39,471 - SENDING 8 messages to LLM
+2026-04-19 09:24:40,304 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:24:40,306 - FINAL ANSWER: Diagnosis: The cluster has a pod 'adservice-64d' that is not fully ready, with an unknown status. The 'staging' namespace is empty, indicating that there are no resources running in that namespace.
+
+F
+2026-04-19 09:25:11,049 - USER QUERY: what about the other namespace
+2026-04-19 09:25:11,049 - TOOL CALL: kubectl get pods
+2026-04-19 09:25:11,126 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:25:11,126 - TOOL CALL: kubectl get pods -n staging
+2026-04-19 09:25:11,190 - TOOL RESULT: No resources found in staging namespace.
+
+2026-04-19 09:25:11,190 - SENDING 8 messages to LLM
+2026-04-19 09:25:12,024 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:25:12,025 - FINAL ANSWER: Diagnosis: The 'adservice-64' pod is stuck in an unknown state, and there are no resources found in the 'staging' namespace, indicating that the pod is not running or is not healthy, and the 'staging'
+2026-04-19 09:25:29,918 - USER QUERY: ''''bash
+2026-04-19 09:25:29,918 - TOOL CALL: kubectl get pods
+2026-04-19 09:25:30,019 - TOOL RESULT: NAME                                    READY   STATUS             RESTARTS         AGE
+adservice-64
+2026-04-19 09:25:30,019 - SENDING 8 messages to LLM
+2026-04-19 09:25:30,990 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 09:25:30,993 - FINAL ANSWER: Diagnosis: The 'adservice-64' pod is not fully ready, with a status that is empty, indicating that the container is not running or is not healthy.
+
+Fix: To diagnose the issue, run:
+```bash
+kubectl des
+2026-04-19 13:14:27,668 - TOOL CALL: kubectl get pods
+2026-04-19 13:14:28,162 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:14:57,660 - TOOL CALL: kubectl get pods
+2026-04-19 13:14:57,756 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:14:57,764 - USER QUERY: Which pods are not running and why?
+2026-04-19 13:14:57,764 - TOOL CALL: kubectl get pods
+2026-04-19 13:14:57,848 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:14:57,848 - SENDING 2 messages to LLM
+2026-04-19 13:14:59,166 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 13:14:59,218 - FINAL ANSWER: Diagnosis: The connection to the Kubernetes cluster is refused, indicating that the Kubernetes cluster is not accessible or not running. 
+
+Fix: 
+1. Check if the Kubernetes cluster is running: `systemc
+2026-04-19 13:15:12,152 - TOOL CALL: kubectl get pods
+2026-04-19 13:15:12,254 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:15:12,260 - USER QUERY: Which pods are not running?
+2026-04-19 13:15:12,261 - TOOL CALL: kubectl get pods
+2026-04-19 13:15:12,327 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:15:12,327 - SENDING 4 messages to LLM
+2026-04-19 13:15:13,706 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 13:15:13,708 - FINAL ANSWER: Diagnosis: The connection to the Kubernetes cluster is refused, indicating that the Kubernetes cluster is not accessible or the kubeconfig is not properly set.
+
+Fix: 
+1. Check kubeconfig: `kubectl con
+2026-04-19 13:15:13,739 - TOOL CALL: kubectl get pods
+2026-04-19 13:15:13,813 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:17:15,227 - TOOL CALL: kubectl get pods
+2026-04-19 13:17:15,451 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:17:18,366 - TOOL CALL: kubectl get pods
+2026-04-19 13:17:18,502 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:17:18,513 - USER QUERY: Which pods are not running?
+2026-04-19 13:17:18,513 - TOOL CALL: kubectl get pods
+2026-04-19 13:17:18,626 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:17:18,626 - SENDING 2 messages to LLM
+2026-04-19 13:17:19,450 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 13:17:19,456 - FINAL ANSWER: Diagnosis: The Kubernetes cluster is not accessible, indicating a potential connection issue with the API server.
+
+Fix: 
+1. Check the Kubernetes cluster connection: `kubectl cluster-info`
+2. Verify th
+2026-04-19 13:17:19,502 - TOOL CALL: kubectl get pods
+2026-04-19 13:17:19,638 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:20:57,318 - TOOL CALL: kubectl get pods
+2026-04-19 13:20:57,495 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:21:09,945 - TOOL CALL: kubectl get pods
+2026-04-19 13:21:10,060 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:21:10,069 - USER QUERY: Why is pending-pod stuck?
+2026-04-19 13:21:10,069 - TOOL CALL: kubectl get pods
+2026-04-19 13:21:10,138 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:21:10,138 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp'
+2026-04-19 13:21:10,195 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:21:10,195 - SENDING 2 messages to LLM
+2026-04-19 13:21:12,214 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 13:21:12,255 - FINAL ANSWER: Diagnosis: The pod is stuck in a pending state due to a connection refusal to the Kubernetes server. This suggests that the Kubernetes cluster is not properly configured or the pod is trying to connec
+2026-04-19 13:21:12,282 - TOOL CALL: kubectl get pods
+2026-04-19 13:21:12,344 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:22:15,178 - TOOL CALL: kubectl get pods
+2026-04-19 13:22:15,322 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:22:15,380 - TOOL CALL: kubectl get pods
+2026-04-19 13:22:15,552 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:38,683 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:38,862 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:41,138 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:41,230 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:41,239 - USER QUERY: Why is pending-pod stuck?
+2026-04-19 13:23:41,240 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:41,319 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:41,319 - TOOL CALL: kubectl get events --sort-by='.lastTimestamp'
+2026-04-19 13:23:41,396 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:41,396 - SENDING 2 messages to LLM
+2026-04-19 13:23:42,860 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 13:23:42,890 - FINAL ANSWER: Diagnosis: The pod is stuck in a pending state because the Kubernetes cluster is unable to connect to the Docker daemon or the container runtime. The error message suggests that the connection to the 
+2026-04-19 13:23:42,927 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:42,989 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:46,808 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:46,913 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:46,920 - USER QUERY: Is broken-service working?
+2026-04-19 13:23:46,920 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:46,994 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:46,994 - TOOL CALL: kubectl get endpoints
+2026-04-19 13:23:47,096 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
+2026-04-19 13:23:47,096 - SENDING 4 messages to LLM
+2026-04-19 13:23:48,374 - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-19 13:23:48,377 - FINAL ANSWER: Diagnosis: The broken-service is not working because the endpoint is not reachable. The error message indicates that the connection to the server 127.0.0.1:32771 is being refused.
+
+Fix: 
+1. Check if t
+2026-04-19 13:23:48,438 - TOOL CALL: kubectl get pods
+2026-04-19 13:23:48,544 - TOOL RESULT: The connection to the server 127.0.0.1:32771 was refused - did you specify the right host or port?
+
