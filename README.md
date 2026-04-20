@@ -221,11 +221,14 @@ AI:  Complete fix guide for all 3 issues found
 
 ---
 
-## 📝 Transparency Logging
+## Transparency Logging
+
+```text
 2026-04-19 10:23:01 - USER QUERY: Which pods are not running?
 2026-04-19 10:23:01 - TOOL CALL: kubectl get pods
 2026-04-19 10:23:02 - TOOL RESULT: NAME READY STATUS...
-2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running...
+2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running.
+```
 
 ---
 ## Project Structure
