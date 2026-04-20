@@ -1,5 +1,6 @@
-cat > ~/Rakshitha-cpu-H2H-Bright-Bits-Agentic-AI-Ops-Assistant-for-Kubernetes-Clusters/README.md << 'EOF'
 # ☸️ Agentic AI Ops Assistant for Kubernetes Clusters
+
+> AI-powered Kubernetes diagnostics using natural language — just ask, it diagnoses and fixes.
 
 <div align="center">
 
@@ -9,22 +10,54 @@ cat > ~/Rakshitha-cpu-H2H-Bright-Bits-Agentic-AI-Ops-Assistant-for-Kubernetes-Cl
 ![Groq](https://img.shields.io/badge/Groq-Llama_3.3-F55036?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**An AI-powered web assistant that monitors, diagnoses, and recommends fixes for a local Kubernetes cluster using natural language.**
-
 </div>
 
 ---
 
-## 📌 Project Overview
+## 🚨 Problem Statement
 
-Submission for **H2H Bright Bits Hackathon** — AI/DevOps category.
+Managing Kubernetes clusters is complex and requires deep expertise.
+When pods crash, services break, or resources run out — engineers
+spend hours manually running kubectl commands, reading logs, and
+searching documentation to find the root cause.
 
-- 🔍 Accepts natural language queries about your cluster
-- ⚙️ Autonomously runs kubectl commands to gather data
-- 🧠 Reasons over the output using an LLM
-- 🔧 Provides root-cause analysis and exact fix commands
-- 💬 Remembers conversation context for follow-up questions
-- 📝 Logs every tool call for full transparency
+**The problem:**
+- Kubernetes errors are cryptic and hard to understand
+- Debugging requires running 10+ commands manually
+- New engineers don't know where to start
+- Downtime costs money every minute
+
+---
+
+## 💡 Proposed Solution
+
+An AI-powered assistant that:
+- Accepts plain English questions about your cluster
+- Automatically runs the right kubectl commands
+- Reasons over the output using an LLM
+- Returns a clear root-cause explanation + exact fix commands
+- Remembers conversation context for follow-up questions
+
+**What makes it unique:**
+- No Kubernetes expertise needed — just ask in plain English
+- Fully autonomous — no manual command running
+- Conversation memory — follow-up questions work naturally
+- Complete transparency — every tool call is logged
+
+---
+
+## ✨ Features
+
+- 🗣️ Natural language queries — ask in plain English
+- ⚙️ Auto kubectl execution — agent runs commands itself
+- 🧠 Root cause analysis — explains WHY things break
+- 🔧 Exact fix commands — tells you exactly what to run
+- 💬 Conversation memory — follow-up questions work
+- 📝 Full transparency logging — every step logged
+- 🖥️ Beautiful web UI — dark theme dashboard
+- 🔴 Fault injection — 4 real faults for testing
+- 📊 Live cluster status — pod counts in sidebar
+- ⚡ Quick diagnose buttons — one click diagnosis
 
 ---
 
@@ -32,14 +65,14 @@ Submission for **H2H Bright Bits Hackathon** — AI/DevOps category.
 
 ```mermaid
 flowchart TD
-    A[👤 User\nNatural Language Query] --> B[🖥️ Streamlit Web UI\nlocalhost:8501]
-    B --> C[🧠 AI Agent\nGroq + Llama 3.3-70b]
+    A[👤 User — Natural Language Query] --> B[🖥️ Streamlit Web UI]
+    B --> C[🧠 AI Agent — Groq + Llama 3.3]
     C --> D[⚙️ kubectl Tool Calls]
-    D --> E[☸️ Minikube Cluster\n11 Microservices]
+    D --> E[☸️ Minikube Cluster]
     E --> C
-    C --> F[📋 Root Cause Summary\n+ Fix Commands]
+    C --> F[📋 Root Cause + Fix Commands]
     F --> B
-    C --> G[📝 logs/agent.log\nFull Transparency]
+    C --> G[📝 logs/agent.log]
 
     style A fill:#1e3a5f,color:#93c5fd
     style B fill:#064e3b,color:#6ee7b7
@@ -52,51 +85,33 @@ flowchart TD
 
 ---
 
-## ✨ Features
-
-| Feature | Description |
-|---------|-------------|
-| 🗣️ Natural Language | Ask questions in plain English |
-| ⚙️ Auto kubectl | Agent runs commands automatically |
-| 🧠 Root Cause Analysis | Explains WHY things are broken |
-| 🔧 Fix Commands | Gives exact commands to fix issues |
-| 💬 Conversation Memory | Follow-up questions work naturally |
-| 📝 Full Logging | Every tool call logged transparently |
-| 🖥️ Web UI | Beautiful Streamlit dashboard |
-| 🔴 Fault Injection | 4 real faults for realistic testing |
-
----
-
 ## 🧰 Tech Stack
 
 | Component | Technology | Why |
 |-----------|------------|-----|
-| Local Cluster | Minikube v1.38 | Easy local K8s setup |
+| Local Cluster | Minikube v1.38 | Easy local K8s |
 | Microservices | Google Online Boutique | Real 11-service app |
-| AI Model | Llama 3.3-70b via Groq | Free, fast, accurate |
+| AI Model | Llama 3.3-70b via Groq | Free and fast |
 | Agent Framework | Custom ReAct Loop | Full control |
-| Web UI | Streamlit | Fast to build |
-| Language | Python 3.12 | Best AI/DevOps support |
+| Web UI | Streamlit | Professional UI |
+| Language | Python 3.12 | Best AI support |
 | Platform | Ubuntu 24.04 WSL2 | Linux on Windows |
 
 ---
 
 ## 🤖 Model Choice
 
-**Groq API + llama-3.3-70b-versatile** was chosen because:
-
-- ✅ Completely FREE — no credit card needed
-- ✅ Very fast inference — low latency
-- ✅ Strong reasoning over kubectl output
-- ✅ Handles multi-turn conversation well
-- ✅ Understands Kubernetes concepts natively
+**Groq API + llama-3.3-70b-versatile** chosen because:
+- ✅ Completely FREE
+- ✅ Fast inference
+- ✅ Strong Kubernetes reasoning
+- ✅ Multi-turn conversation support
 
 | Model | Reason Rejected |
 |-------|----------------|
 | Anthropic Claude | Requires paid credits |
-| Google Gemini | Free quota ran out quickly |
+| Google Gemini | Free quota ran out |
 | Ollama local | Too slow on 8GB RAM |
-| GPT-4 | Requires paid credits |
 
 ---
 
@@ -106,7 +121,7 @@ flowchart TD
 |------------|----------|------------|---------|
 | CrashLoopBackOff | crashloop-app | Exit code 1 | Restarts forever |
 | Pending Pod | pending-pod | Requests 100Gi RAM | Never scheduled |
-| Broken Service | broken-service | Wrong selector label | 0 endpoints |
+| Broken Service | broken-service | Wrong selector | 0 endpoints |
 | OOMKilled | oom-pod | Memory limit 50Mi | Killed by OS |
 
 ---
@@ -116,7 +131,7 @@ flowchart TD
 ### Prerequisites
 - Windows 11 with WSL2 + Ubuntu 24.04
 - Docker installed
-- 4 CPU cores, 8GB RAM minimum
+- 4 CPU cores, 8GB RAM
 - Groq API key — free at console.groq.com
 
 ### Step 1 — Start Docker
@@ -160,22 +175,41 @@ http://localhost:8501
 
 ---
 
-## 💬 Demo Conversations
+## 🎥 Demo Video
+
+[▶️ Watch Demo on YouTube](#) ← add your link here
+
+---
+
+## 📸 Screenshots
+
+### Web UI Dashboard
+![Dashboard](screenshots/dashboard.png)
+
+### AI Diagnosis in Action
+![Diagnosis](screenshots/diagnosis.png)
+
+### Cluster Status Sidebar
+![Sidebar](screenshots/sidebar.png)
+
+---
+
+## 💬 5 Diagnostic Conversations
 
 ### 1️⃣ Find Broken Pods
 You: Which pods are not running and why?
 AI:  crashloop-app → CrashLoopBackOff (exit code 1)
 pending-pod   → Pending (needs 100Gi RAM)
 
-### 2️⃣ Follow-up Question
+### 2️⃣ Follow-up Memory Test
 You: Why is that happening?
-AI:  crashloop-app exits with error code 1.
-pending-pod needs 100GB RAM, node has 3GB.
+AI:  Remembers context from Question 1 and explains
+root causes of those specific pods
 
 ### 3️⃣ Service Diagnosis
 You: Is broken-service routing traffic correctly?
-AI:  No. Selector points to nonexistent-app.
-0 endpoints. Fix selector label.
+AI:  No. 0 endpoints. Wrong selector label.
+Fix: kubectl edit service broken-service
 
 ### 4️⃣ Namespace Follow-up
 You: What about the staging namespace?
@@ -183,63 +217,57 @@ AI:  staging exists but has no pods running.
 
 ### 5️⃣ Fix Everything
 You: How do I fix all the issues?
-AI:  1. Fix crashloop: kubectl patch deployment...
-2. Fix pending: reduce memory to 128Mi
-3. Fix service: update selector label
+AI:  Complete fix guide for all 3 issues found
 
 ---
 
-## Transparency Logging
-
-```text
+## 📝 Transparency Logging
 2026-04-19 10:23:01 - USER QUERY: Which pods are not running?
 2026-04-19 10:23:01 - TOOL CALL: kubectl get pods
 2026-04-19 10:23:02 - TOOL RESULT: NAME READY STATUS...
-2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running.
-```
+2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running...
 
-## Project Structure
+---
 
-```text
+## 📁 Project Structure
 ├── agent/
-│   └── agent.py            # AI agent ReAct loop
+│   └── agent.py          ← AI agent ReAct loop
 ├── cluster/
-│   └── setup.sh            # Cluster setup script
+│   └── setup.sh          ← Cluster setup script
 ├── faults/
-│   └── faults.yaml         # Contains 4 injected faults
+│   └── faults.yaml       ← 4 injected faults
 ├── logs/
-│   └── agent.log           # Transparency and execution logs
+│   └── agent.log         ← Transparency logs
+├── screenshots/          ← UI screenshots
 ├── ui/
-│   └── app.py              # Streamlit web interface
-├── README.md               # Project documentation
-├── report.md               # One-page project write-up
-└── requirements.txt        # Python dependencies
-```
+│   └── app.py            ← Streamlit web UI
+├── README.md             ← This file
+├── report.md             ← One page write-up
+└── requirements.txt      ← Python dependencies
+
 ---
 
 ## 📈 Scaling to 200+ Services
 
 | Challenge | Solution |
 |-----------|----------|
-| Too many pods | Vector DB search over metadata |
-| Single agent bottleneck | One agent per namespace |
-| Slow kubectl calls | Cache results 30 seconds |
-| Alert overload | Trigger only on real alerts |
-| Security risk | Read-only RBAC service account |
-
-### Production Architecture
+| Too many pods | Vector DB search |
+| Single bottleneck | One agent per namespace |
+| Slow kubectl | Cache 30 seconds |
+| Alert overload | Trigger on alerts only |
+| Security | Read-only RBAC |
 
 ```mermaid
 flowchart TD
     A[🚨 Alert Manager] --> B[🔀 Agent Router]
-    B --> C[🤖 Agent\nfrontend namespace]
-    B --> D[🤖 Agent\nbackend namespace]
-    B --> E[🤖 Agent\ndata namespace]
-    C --> F[⚙️ kubectl\nread-only]
+    B --> C[🤖 Agent frontend]
+    B --> D[🤖 Agent backend]
+    B --> E[🤖 Agent data]
+    C --> F[⚙️ kubectl read-only]
     D --> F
     E --> F
-    F --> G[📋 Root Cause Summary]
-    G --> H[📣 Slack / PagerDuty]
+    F --> G[📋 Root Cause]
+    G --> H[📣 Slack/PagerDuty]
 
     style A fill:#7f1d1d,color:#fca5a5
     style B fill:#1e3a5f,color:#93c5fd
@@ -253,21 +281,21 @@ flowchart TD
 
 ---
 
-## 👩‍💻 Author
+## 👥 Team Members
 
-**Rakshitha R**
-GitHub: [@Rakshitha-cpu](https://github.com/Rakshitha-cpu)
-Hackathon: H2H Bright Bits — AI/DevOps Track
+| Name | Role | GitHub |
+|------|------|--------|
+| Rakshitha R | AI Agent + Backend | [@Rakshitha-cpu](https://github.com/Rakshitha-cpu) |
+| Poojary Nisarga Arun | Frontend + DevOps | [https://github.com/Nisarga582] |
 
 ---
 
-## Team Members
-Rakshitha R,
-poojary Nisarga Arun
+## 🌐 Deployed Link
+
+[Live Demo →](#) ← add your deployed URL here
 
 ---
 
 ## 📄 License
 
-MIT License
-EOF
+MIT License — H2H Bright Bits Hackathon 2026
