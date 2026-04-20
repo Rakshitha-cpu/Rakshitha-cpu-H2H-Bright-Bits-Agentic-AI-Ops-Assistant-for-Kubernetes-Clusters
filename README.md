@@ -285,7 +285,7 @@ flowchart TD
 
 | Name | Role | GitHub |
 |------|------|--------|
-| Rakshitha R | AI Agent + Backend | [@Rakshitha-cpu](https://github.com/Rakshitha-cpu) |
+| Rakshitha R | AI Agent + Backend | [https://github.com/Rakshitha-cpu] |
 | Poojary Nisarga Arun | Frontend + DevOps | [https://github.com/Nisarga582] |
 
 ---
