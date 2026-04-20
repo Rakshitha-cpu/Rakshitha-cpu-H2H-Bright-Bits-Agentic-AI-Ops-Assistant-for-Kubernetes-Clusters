@@ -228,23 +228,23 @@ AI:  Complete fix guide for all 3 issues found
 2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running...
 
 ---
+## Project Structure
 
-## 📁 Project Structure
+```text
 ├── agent/
-│   └── agent.py          ← AI agent ReAct loop
+│   └── agent.py            # AI agent ReAct loop
 ├── cluster/
-│   └── setup.sh          ← Cluster setup script
+│   └── setup.sh            # Cluster setup script
 ├── faults/
-│   └── faults.yaml       ← 4 injected faults
+│   └── faults.yaml         # Contains 4 injected faults
 ├── logs/
-│   └── agent.log         ← Transparency logs
-├── screenshots/          ← UI screenshots
+│   └── agent.log           # Transparency and execution logs
 ├── ui/
-│   └── app.py            ← Streamlit web UI
-├── README.md             ← This file
-├── report.md             ← One page write-up
-└── requirements.txt      ← Python dependencies
-
+│   └── app.py              # Streamlit web interface
+├── README.md               # Project documentation
+├── report.md               # One-page project write-up
+└── requirements.txt        # Python dependencies
+```
 ---
 
 ## 📈 Scaling to 200+ Services
