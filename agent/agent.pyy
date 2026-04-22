@@ -1,0 +1,327 @@
+import subprocess
+import logging
+import os
+import json
+from groq import Groq
+
+# ── Logging setup ──────────────────────────────────────────
+log_path = os.path.expanduser(
+    '~/Rakshitha-cpu-H2H-Bright-Bits-Agentic-AI-Ops-Assistant-for-Kubernetes-Clusters/logs/agent.log'
+)
+os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+logging.basicConfig(
+    filename=log_path,
+    level=logging.INFO,
+    format='%(asctime)s | %(message)s'
+)
+logger = logging.getLogger()
+
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+# ── System prompt ──────────────────────────────────────────
+SYSTEM_PROMPT = """You are a Kubernetes diagnosis assistant.
+
+Return valid JSON only.
+
+Schema:
+{
+  "evidence": [string],
+  "root_cause": string,
+  "fix": [string],
+  "verify": [string]
+}
+
+Rules:
+1. Evidence must contain only facts directly visible in kubectl output.
+2. Root cause must be exactly one sentence.
+3. Fix must be tied to the evidence.
+4. Verify must contain kubectl commands only.
+5. Do not guess node memory, CPU, previous state, or hidden resources.
+6. Keep pod names, service names, namespace names, and resource units exactly as shown.
+7. If evidence is missing, say "Not enough evidence yet."
+8. Prefer fixing Deployment/manifest/controller instead of editing live Pods directly.
+9. If a resource is missing, say it is missing instead of pretending the cause is confirmed.
+10. No markdown. No extra keys. No repeated sections.
+"""
+
+# ── kubectl runner ─────────────────────────────────────────
+def run_kubectl(cmd: str) -> str:
+    logger.info(f"TOOL CALL >>> kubectl {cmd}")
+    try:
+        result = subprocess.run(
+            f"kubectl {cmd}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        out = result.stdout.strip() or result.stderr.strip()
+        out = out[:4000]
+        logger.info(f"TOOL RESULT >>> {out[:500]}")
+        return out
+    except Exception as e:
+        logger.error(f"TOOL ERROR >>> {str(e)}")
+        return f"Error running kubectl {cmd}: {str(e)}"
+
+# ── command planner ────────────────────────────────────────
+def decide_commands(question: str):
+    logger.info(f"REACT PLAN >>> Deciding commands for: {question}")
+
+    planning_prompt = f"""You are a Kubernetes expert planning a diagnosis.
+
+Question: {question}
+
+Return ONLY a JSON array of kubectl commands (without the 'kubectl' prefix).
+
+Rules:
+- Return only JSON
+- Maximum 6 commands
+- Use only safe read-only commands
+- Prefer: get, describe, logs, events, endpoints, endpointslices, services, deployments, namespaces, nodes
+- If the question is about Pending, include describe pod and get events
+- If the question is about CrashLoopBackOff, include describe pod and logs --previous
+- If the question is about a Service, include describe svc and get endpoints
+- If the question is about staging, include -n staging
+- If the question asks to fix all issues, inspect all known faulty resources
+
+Known resources:
+- Pods: crashloop-app, pending-pod, oom-pod
+- Service: broken-service
+- Namespaces: default, staging
+
+Example:
+["get pod pending-pod", "describe pod pending-pod", "get events --sort-by=.lastTimestamp"]
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": planning_prompt}],
+            temperature=0,
+            max_tokens=200
+        )
+
+        raw = response.choices[0].message.content.strip()
+        logger.info(f"REACT PLAN RESULT >>> {raw}")
+
+        start = raw.find("[")
+        end = raw.rfind("]") + 1
+        if start != -1 and end > start:
+            commands = json.loads(raw[start:end])
+            if isinstance(commands, list):
+                cleaned = []
+                for cmd in commands[:6]:
+                    if isinstance(cmd, str) and cmd.strip():
+                        cleaned.append(cmd.strip().replace("kubectl ", ""))
+                if cleaned:
+                    return cleaned
+    except Exception as e:
+        logger.error(f"REACT PLAN ERROR >>> {str(e)}")
+
+    q = question.lower()
+
+    if "fix all" in q or "all issues" in q:
+        return [
+            "get pods -o wide",
+            "describe pod crashloop-app",
+            "describe pod pending-pod",
+            "describe svc broken-service",
+            "get endpoints broken-service",
+            "get events --sort-by=.lastTimestamp"
+        ]
+    if "pending" in q:
+        return [
+            "get pod pending-pod",
+            "describe pod pending-pod",
+            "get events --sort-by=.lastTimestamp",
+            "get node minikube -o jsonpath='{.status.allocatable.memory}'"
+        ]
+    if "crashloop" in q or "crashing" in q:
+        return [
+            "get pod crashloop-app",
+            "describe pod crashloop-app",
+            "logs crashloop-app --previous"
+        ]
+    if "service" in q or "broken-service" in q:
+        return [
+            "get svc broken-service",
+            "describe svc broken-service",
+            "get endpoints broken-service",
+            "get pods --show-labels"
+        ]
+    if "oom" in q:
+        return [
+            "get pod oom-pod",
+            "describe pod oom-pod",
+            "logs oom-pod --previous",
+            "get events --sort-by=.lastTimestamp"
+        ]
+    if "staging" in q:
+        return [
+            "get pods -n staging",
+            "get svc -n staging",
+            "get events -n staging --sort-by=.lastTimestamp",
+            "describe namespace staging"
+        ]
+
+    return [
+        "get pods -o wide",
+        "get svc",
+        "get events --sort-by=.lastTimestamp"
+    ]
+
+# ── collect data ───────────────────────────────────────────
+def collect_data(commands):
+    results = {}
+    for cmd in commands:
+        cmd = cmd.strip().replace("kubectl ", "")
+        logger.info(f"REACT ACT >>> Running: kubectl {cmd}")
+        results[cmd] = run_kubectl(cmd)
+    return results
+
+# ── format output ──────────────────────────────────────────
+def format_answer(data):
+    evidence = data.get("evidence", ["Not enough evidence yet."])
+    root_cause = data.get("root_cause", "Not enough evidence yet.")
+    fix = data.get("fix", ["Re-run the diagnosis with more kubectl evidence."])
+    verify = data.get("verify", ["kubectl get pods", "kubectl get events --sort-by=.lastTimestamp"])
+
+    lines = []
+    lines.append("EVIDENCE")
+    for item in evidence:
+        lines.append(f"- {item}")
+
+    lines.append("")
+    lines.append("ROOT CAUSE")
+    lines.append(root_cause)
+
+    lines.append("")
+    lines.append("FIX")
+    for item in fix:
+        lines.append(f"- {item}")
+
+    lines.append("")
+    lines.append("VERIFY")
+    for item in verify:
+        lines.append(f"- {item}")
+
+    return "\n".join(lines)
+
+def parse_json_answer(raw_text):
+    try:
+        start = raw_text.find("{")
+        end = raw_text.rfind("}") + 1
+        if start != -1 and end > start:
+            data = json.loads(raw_text[start:end])
+            if all(k in data for k in ["evidence", "root_cause", "fix", "verify"]):
+                return data
+    except Exception:
+        pass
+
+    return {
+        "evidence": ["Not enough evidence yet."],
+        "root_cause": "Unable to produce a clean structured diagnosis from the available output.",
+        "fix": ["Re-run the analysis with more kubectl evidence."],
+        "verify": ["kubectl get pods", "kubectl get events --sort-by=.lastTimestamp"]
+    }
+
+# ── main agent ─────────────────────────────────────────────
+def run_agent(user_query, conversation_history):
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info(f"USER QUERY >>> {user_query}")
+    logger.info("=" * 60)
+
+    planned_commands = decide_commands(user_query)
+    logger.info(f"PLANNED COMMANDS >>> {planned_commands}")
+
+    all_data = collect_data(planned_commands)
+
+    context = "=== LIVE KUBERNETES CLUSTER DATA ===\n"
+    for cmd, output in all_data.items():
+        context += f"\n$ kubectl {cmd}\n{output}\n"
+    context += "\n=== END OF CLUSTER DATA ===\n"
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    for role, msg in conversation_history[-6:]:
+        messages.append({
+            "role": "user" if role == "User" else "assistant",
+            "content": msg
+        })
+
+    messages.append({
+        "role": "user",
+        "content": f"""User question:
+{user_query}
+
+Cluster data:
+{context}
+
+Return valid JSON only using the required schema."""
+    })
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0,
+            max_tokens=700
+        )
+
+        raw_answer = response.choices[0].message.content.strip()
+        logger.info(f"RAW FINAL ANSWER >>> {raw_answer[:1000]}")
+
+        parsed = parse_json_answer(raw_answer)
+        answer = format_answer(parsed)
+
+        conversation_history.append(("User", user_query))
+        conversation_history.append(("Assistant", answer[:400]))
+
+        logger.info(f"FINAL ANSWER >>> {answer[:1000]}")
+        return answer
+
+    except Exception as e:
+        logger.error(f"FINAL LLM ERROR >>> {str(e)}")
+        return f"""EVIDENCE
+- Error while generating diagnosis: {str(e)}
+
+ROOT CAUSE
+The diagnosis model request failed.
+
+FIX
+- Check GROQ_API_KEY
+- Check internet connectivity
+- Check Groq model availability
+
+VERIFY
+- echo $GROQ_API_KEY
+- python3 -c "from groq import Groq; print('Groq client ok')"
+"""
+
+# ── CLI mode ───────────────────────────────────────────────
+if __name__ == "__main__":
+    print("\n☸️  K8s AI Ops Assistant")
+    print("=" * 40)
+    print("Ask anything about your cluster.")
+    print("Type 'quit' to exit.\n")
+
+    history = []
+    while True:
+        try:
+            query = input("You: ").strip()
+        except KeyboardInterrupt:
+            print("\nBye!")
+            break
+
+        if query.lower() in ["quit", "exit"]:
+            break
+        if not query:
+            continue
+
+        print("\n⏳ Analyzing cluster...\n")
+        answer = run_agent(query, history)
+        print(f"🤖 Assistant:\n{answer}\n")
+        print("-" * 40)
+PY

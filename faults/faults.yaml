@@ -17,14 +17,15 @@ spec:
         image: busybox
         command: ["/bin/sh", "-c", "exit 1"]
 ---
+---
 apiVersion: v1
-kind: Pod
+kind: Service
 metadata:
-  name: pending-pod
+  name: broken-service
 spec:
-  containers:
-  - name: nginx
-    image: nginx
-    resources:
-      requests:
-        memory: "100Gi"
+  selector:
+    app: nonexistent-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
