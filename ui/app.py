@@ -1,9 +1,8 @@
 import streamlit as st
-import sys
 import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'agent'))
 
-sys.path.append(os.path.expanduser('~/Rakshitha-cpu-H2H-Bright-Bits-Agentic-AI-Ops-Assistant-for-Kubernetes-Clusters/agent'))
-from agent import run_agent, run_kubectl
+from agent.agent import run_agent, run_kubectl, get_last_commands
 
 st.set_page_config(
     page_title="K8s AI Ops Assistant",
@@ -14,382 +13,541 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
-html, body, .stApp, [data-testid="stAppViewContainer"] {
-    background-color: #0a0f1e !important;
-    font-family: 'Space Grotesk', sans-serif !important;
+html, body, [data-testid="stAppViewContainer"], .stApp {
+    background: linear-gradient(180deg, #07111d 0%, #050b14 100%) !important;
+    color: #e8f1fb !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+[data-testid="stHeader"] {
+    background: transparent !important;
 }
 
 section[data-testid="stSidebar"] {
-    background-color: #0d1526 !important;
-    border-right: 1px solid #1e3a5f !important;
+    background: #08111c !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
 }
 
-section[data-testid="stSidebar"] * {
-    color: #ffffff !important;
+.block-container {
+    max-width: 1450px !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
 }
 
-.stApp * {
-    color: #ffffff;
-}
-
-p, li, span, label, div {
-    color: #e2e8f0 !important;
-}
-
-h1, h2, h3, h4 {
-    color: #ffffff !important;
+h1, h2, h3, h4, h5, h6, p, span, div, label {
+    color: #e8f1fb !important;
 }
 
 .hero {
-    padding: 20px 0 10px 0;
+    background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
 }
 
 .hero-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #ffffff !important;
-    line-height: 1.2;
-}
-
-.hero-blue {
-    color: #38bdf8 !important;
+    font-size: 2.3rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
 }
 
 .hero-sub {
-    color: #94a3b8 !important;
+    color: #9fb7cf !important;
     font-size: 1rem;
-    margin-top: 6px;
 }
 
-.divider {
-    border: none;
-    border-top: 1px solid #1e3a5f;
-    margin: 16px 0;
-}
-
-.status-box {
-    background: #111827;
-    border: 1px solid #1e3a5f;
-    border-radius: 10px;
+.soft-card {
+    background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
     padding: 14px 16px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
-.status-title {
-    color: #94a3b8 !important;
-    font-size: 0.75rem;
+.section-label {
+    font-size: 0.74rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+    color: #9fb7cf !important;
     margin-bottom: 10px;
-    font-weight: 600;
+}
+
+.metric-wrap {
+    background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 16px 18px;
+    min-height: 132px;
+}
+
+.metric-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9fb7cf !important;
+    font-weight: 800;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-top: 8px;
+}
+
+.metric-sub {
+    color: #b9cde2 !important;
+    margin-top: 8px;
+    font-size: 0.92rem;
+}
+
+.badge-live {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(20,83,45,0.7);
+    color: #86efac !important;
+    border: 1px solid rgba(34,197,94,0.3);
+    font-size: 0.82rem;
+    font-weight: 800;
 }
 
 .status-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    border-bottom: 1px solid #1e3a5f;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.92rem;
 }
 
 .status-row:last-child {
     border-bottom: none;
 }
 
-.status-label {
-    color: #cbd5e1 !important;
-    font-size: 0.85rem;
+.badge-green, .badge-red, .badge-yellow, .badge-blue {
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 0.76rem;
+    font-weight: 800;
 }
 
-.badge-green {
-    background: #064e3b;
-    color: #6ee7b7 !important;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    border: 1px solid #065f46;
-}
-
-.badge-red {
-    background: #450a0a;
-    color: #fca5a5 !important;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    border: 1px solid #7f1d1d;
-}
-
-.badge-yellow {
-    background: #451a03;
-    color: #fcd34d !important;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    border: 1px solid #78350f;
-}
-
-.badge-white {
-    color: #ffffff !important;
-    font-weight: 700;
-    font-size: 0.85rem;
-}
-
-.fault-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 0;
-    font-size: 0.85rem;
-    color: #cbd5e1 !important;
-}
-
-.dot-red { color: #f87171 !important; font-size: 18px; line-height: 1; }
-.dot-yellow { color: #fbbf24 !important; font-size: 18px; line-height: 1; }
+.badge-green { background: rgba(20,83,45,0.72); color: #86efac !important; }
+.badge-red { background: rgba(127,29,29,0.72); color: #fca5a5 !important; }
+.badge-yellow { background: rgba(120,53,15,0.72); color: #fcd34d !important; }
+.badge-blue { background: rgba(30,64,175,0.72); color: #bfdbfe !important; }
 
 .welcome-card {
-    background: #111827;
-    border: 1px solid #1e3a5f;
+    background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
+    border: 1px solid rgba(56,189,248,0.22);
     border-left: 4px solid #38bdf8;
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin: 12px 0;
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
 }
 
 .welcome-title {
-    color: #38bdf8 !important;
-    font-size: 1rem;
+    font-size: 1.06rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.welcome-sub {
+    color: #a6bfd8 !important;
+    font-size: 0.93rem;
+    line-height: 1.7;
+}
+
+.chat-card {
+    background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+}
+
+.chat-label {
+    font-size: 0.82rem;
+    color: #9fb7cf !important;
+    margin-bottom: 8px;
     font-weight: 700;
-    margin-bottom: 10px;
 }
 
-.welcome-example {
-    color: #38bdf8 !important;
-    font-size: 0.9rem;
-    margin: 4px 0;
-    font-style: italic;
+.chat-value {
+    font-size: 1rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
 }
 
-.welcome-text {
-    color: #94a3b8 !important;
-    font-size: 0.9rem;
+.answer-box {
+    background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 14px;
+}
+
+.answer-section {
+    margin-bottom: 16px;
+}
+
+.answer-section:last-child {
+    margin-bottom: 0;
+}
+
+.answer-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+.answer-evidence { color: #38bdf8 !important; }
+.answer-root { color: #f87171 !important; }
+.answer-fix { color: #4ade80 !important; }
+.answer-verify { color: #60a5fa !important; }
+
+.fault-item {
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.92rem;
+}
+
+.fault-item:last-child {
+    border-bottom: none;
 }
 
 .stButton > button {
-    background: #111827 !important;
-    color: #e2e8f0 !important;
-    border: 1px solid #1e3a5f !important;
-    border-radius: 8px !important;
-    font-size: 0.85rem !important;
-    text-align: left !important;
     width: 100% !important;
-    padding: 8px 12px !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 500 !important;
+    border-radius: 12px !important;
+    background: #0d1b2a !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #e8f1fb !important;
+    font-weight: 600 !important;
+    padding: 0.8rem 0.95rem !important;
+    text-align: left !important;
 }
 
 .stButton > button:hover {
-    border-color: #38bdf8 !important;
-    color: #38bdf8 !important;
-    background: #0d1f35 !important;
-}
-
-[data-testid="stMetricValue"] {
-    color: #38bdf8 !important;
-    font-size: 1.4rem !important;
-    font-weight: 700 !important;
-}
-
-[data-testid="stMetricLabel"] {
-    color: #94a3b8 !important;
-    font-size: 0.8rem !important;
-}
-
-[data-testid="stMetricDelta"] {
-    color: #6ee7b7 !important;
-}
-
-[data-testid="stChatMessage"] {
-    background: #111827 !important;
-    border: 1px solid #1e3a5f !important;
-    border-radius: 10px !important;
-    padding: 12px !important;
-    margin: 6px 0 !important;
-}
-
-[data-testid="stChatMessage"] p {
-    color: #e2e8f0 !important;
-    font-size: 0.95rem !important;
-    line-height: 1.7 !important;
-}
-
-[data-testid="stChatMessage"] code {
-    background: #0a0f1e !important;
-    color: #38bdf8 !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.85rem !important;
+    border-color: rgba(56,189,248,0.45) !important;
+    color: #7dd3fc !important;
 }
 
 [data-testid="stChatInputContainer"] {
-    background: #111827 !important;
-    border: 1px solid #1e3a5f !important;
-    border-radius: 10px !important;
+    background: #0d1b2a !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 14px !important;
 }
 
 [data-testid="stChatInputContainer"] textarea {
-    color: #e2e8f0 !important;
-    font-family: 'Space Grotesk', sans-serif !important;
+    color: #e8f1fb !important;
+    background: transparent !important;
 }
 
-.stSpinner > div {
-    border-top-color: #38bdf8 !important;
+[data-testid="stCodeBlock"] {
+    border-radius: 12px !important;
+    overflow: hidden !important;
 }
 
-[data-testid="stSidebarContent"] .stMarkdown p {
-    color: #ffffff !important;
+[data-testid="stCodeBlock"] pre {
+    background: #0b1220 !important;
+    color: #dbeafe !important;
+}
+
+[data-testid="stExpander"] {
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 14px !important;
+    background: rgba(10, 19, 32, 0.75) !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 if "history" not in st.session_state:
     st.session_state.history = []
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
 if "quick_q" not in st.session_state:
     st.session_state.quick_q = None
 
+
+def safe_get_pods():
+    try:
+        return run_kubectl("get pods")
+    except Exception:
+        return ""
+
+
+def summarize_cluster():
+    pods_output = safe_get_pods()
+
+    if not pods_output.strip():
+        return {"running": "-", "error": "-", "pending": "-", "total": "-"}
+
+    lowered = pods_output.lower()
+    if (
+        "connection refused" in lowered
+        or "unable to connect" in lowered
+        or "server misbehaving" in lowered
+        or "error from server" in lowered
+        or "no such host" in lowered
+    ):
+        return {"running": "-", "error": "-", "pending": "-", "total": "-"}
+
+    lines = [l for l in pods_output.strip().split("\n")[1:] if l.strip()]
+
+    running = sum(1 for l in lines if "Running" in l)
+    error = sum(
+        1
+        for l in lines
+        if "Error" in l or "CrashLoopBackOff" in l or "ImagePullBackOff" in l or "ErrImagePull" in l
+    )
+    pending = sum(1 for l in lines if "Pending" in l)
+    total = len(lines)
+
+    return {
+        "running": running,
+        "error": error,
+        "pending": pending,
+        "total": total,
+    }
+
+
+def split_sections(response: str):
+    sections = {"EVIDENCE": [], "ROOT CAUSE": [], "FIX": [], "VERIFY": []}
+    current = None
+    for raw_line in response.splitlines():
+        line = raw_line.strip()
+        if line in sections:
+            current = line
+            continue
+        if current is not None and line:
+            if line.startswith("- "):
+                line = line[2:]
+            sections[current].append(line)
+    return sections
+
+
+def render_answer(response: str):
+    if "\\n" in response:
+        response = response.replace("\\n", "\n")
+
+    if "ROOT CAUSE" not in response and "FIX" not in response and "VERIFY" not in response:
+        st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+        for line in response.splitlines():
+            if line.strip():
+                st.markdown(f"- {line}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        return
+
+    sections = split_sections(response)
+
+    if not any(sections.values()):
+        st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+        st.write(response)
+        st.markdown('</div>', unsafe_allow_html=True)
+        return
+
+    st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+
+    mapping = [
+        ("EVIDENCE", "📌 EVIDENCE", "answer-evidence"),
+        ("ROOT CAUSE", "🎯 ROOT CAUSE", "answer-root"),
+        ("FIX", "🛠 FIX", "answer-fix"),
+        ("VERIFY", "✅ VERIFY", "answer-verify"),
+    ]
+
+    for key, title, css_cls in mapping:
+        st.markdown('<div class="answer-section">', unsafe_allow_html=True)
+        st.markdown(f'<div class="answer-title {css_cls}">{title}</div>', unsafe_allow_html=True)
+        content = sections.get(key, [])
+        if content:
+            for item in content:
+                st.markdown(f"- {item}")
+        else:
+            st.markdown("- —")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def render_commands():
+    commands = get_last_commands()
+    with st.expander("Commands Used", expanded=False):
+        if commands:
+            for cmd in commands:
+                st.code(f"kubectl {cmd}", language="bash")
+        else:
+            st.write("No commands recorded.")
+
+
+cluster = summarize_cluster()
+if isinstance(cluster["error"], int) and isinstance(cluster["pending"], int):
+    issue_count = cluster["error"] + cluster["pending"]
+    issue_text = f"{issue_count} currently visible runtime issues found from live pod state."
+else:
+    issue_text = "Live cluster status unavailable. Check Docker, Minikube, and kubectl connectivity."
+
 with st.sidebar:
-    st.markdown("<p class='status-title'>⬤ System Status</p>", unsafe_allow_html=True)
     st.markdown("""
-    <div class='status-box'>
-        <div class='fault-item'>
-            <span style='color:#6ee7b7;font-size:10px;'>⬤</span>
-            <span style='color:#cbd5e1;'>Minikube — Online</span>
-        </div>
-        <div class='fault-item'>
-            <span style='color:#6ee7b7;font-size:10px;'>⬤</span>
-            <span style='color:#cbd5e1;'>Groq LLM — Connected</span>
-        </div>
+    <div class="soft-card">
+        <div style="font-size:1.7rem;font-weight:800;">☸️ K8s AI Ops</div>
+        <div style="color:#9fb7cf;font-size:0.92rem;">Assistant</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<p class='status-title'>📊 Cluster Health</p>", unsafe_allow_html=True)
-    try:
-        pods_output = run_kubectl("get pods")
-        lines = pods_output.strip().split('\n')[1:]
-        running = sum(1 for l in lines if 'Running' in l)
-        error = sum(1 for l in lines if 'Error' in l or 'CrashLoop' in l)
-        pending = sum(1 for l in lines if 'Pending' in l)
-        total = len(lines)
-        st.markdown(f"""
-        <div class='status-box'>
-            <div class='status-row'>
-                <span class='status-label'>Running</span>
-                <span class='badge-green'>{running}</span>
-            </div>
-            <div class='status-row'>
-                <span class='status-label'>Error / Crash</span>
-                <span class='badge-red'>{error}</span>
-            </div>
-            <div class='status-row'>
-                <span class='status-label'>Pending</span>
-                <span class='badge-yellow'>{pending}</span>
-            </div>
-            <div class='status-row'>
-                <span class='status-label'>Total Pods</span>
-                <span class='badge-white'>{total}</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    except:
-        st.error("Cannot reach cluster")
+    st.markdown('<div class="section-label">System Status</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="soft-card">
+        <div class="fault-item">• Minikube — Online</div>
+        <div class="fault-item">• Groq LLM — Connected</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("<p class='status-title'>💡 Quick Diagnose</p>", unsafe_allow_html=True)
-    questions = [
+    st.markdown('<div class="section-label">Cluster Health</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="soft-card">
+        <div class="status-row"><span>Running</span><span class="badge-green">{cluster['running']}</span></div>
+        <div class="status-row"><span>Error / Crash</span><span class="badge-red">{cluster['error']}</span></div>
+        <div class="status-row"><span>Pending</span><span class="badge-yellow">{cluster['pending']}</span></div>
+        <div class="status-row"><span>Total Pods</span><span class="badge-blue">{cluster['total']}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-label">Quick Diagnose</div>', unsafe_allow_html=True)
+    for q in [
         "Which pods are not running?",
         "Why is pending-pod stuck?",
         "Is broken-service working?",
         "What about staging namespace?",
-        "How do I fix all issues?"
-    ]
-    for q in questions:
+        "How do I fix all issues?",
+        "What commands did you use to diagnose this?"
+    ]:
         if st.button(q, key=f"q_{q}"):
             st.session_state.quick_q = q
 
-    st.markdown("<p class='status-title'>🔴 Injected Faults</p>", unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Injected Faults</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div class='status-box'>
-        <div class='fault-item'><span class='dot-red'>●</span><span>CrashLoopBackOff</span></div>
-        <div class='fault-item'><span class='dot-yellow'>●</span><span>Pending Pod (100Gi RAM)</span></div>
-        <div class='fault-item'><span class='dot-red'>●</span><span>Broken Service Selector</span></div>
-        <div class='fault-item'><span class='dot-red'>●</span><span>OOMKilled Pod</span></div>
+    <div class="soft-card">
+        <div class="fault-item">• CrashLoopBackOff</div>
+        <div class="fault-item">• Pending Pod (100Gi)</div>
+        <div class="fault-item">• Broken Service</div>
+        <div class="fault-item">• OOMKilled Pod</div>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🗑️ Clear Conversation", key="clear"):
+    if st.button("🗑 Clear Chat", key="clear"):
         st.session_state.messages = []
         st.session_state.history = []
         st.rerun()
 
-st.markdown("""
-<div class='hero'>
-    <div class='hero-title'>☸️ K8s <span class='hero-blue'>AI Ops</span> Assistant</div>
-    <div class='hero-sub'>Natural language Kubernetes diagnostics — powered by Llama 3.3 via Groq</div>
-</div>
-""", unsafe_allow_html=True)
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric(label="Cluster", value="Minikube", delta="Running")
-with col2:
-    st.metric(label="Services", value="11", delta="Online Boutique")
-with col3:
-    st.metric(label="Faults", value="4", delta="Injected")
-with col4:
-    st.metric(label="Model", value="Llama 3.3", delta="Groq Free")
-
-st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-if not st.session_state.messages:
+top_left, top_right = st.columns([5, 1])
+with top_left:
     st.markdown("""
-    <div class='welcome-card'>
-        <div class='welcome-title'>👋 Ready to diagnose your cluster</div>
-        <p class='welcome-text'>Ask me anything in plain English. Try these:</p>
-        <p class='welcome-example'>"Which pods are not running and why?"</p>
-        <p class='welcome-example'>"Why is pending-pod stuck?"</p>
-        <p class='welcome-example'>"How do I fix all the issues you found?"</p>
+    <div class="hero">
+        <div class="hero-title">☸️ K8s AI Ops Assistant</div>
+        <div class="hero-sub">Natural language Kubernetes diagnostics — powered by Llama 3.3 via Groq</div>
+    </div>
+    """, unsafe_allow_html=True)
+with top_right:
+    st.markdown("""
+    <div style="padding-top:38px;text-align:right;">
+        <span class="badge-live">● LIVE</span>
     </div>
     """, unsafe_allow_html=True)
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+c1, c2, c3, c4 = st.columns(4)
+with c1:
+    st.markdown("""
+    <div class="metric-wrap">
+        <div class="metric-label">Services</div>
+        <div class="metric-value">11</div>
+        <div class="metric-sub">Online Boutique</div>
+    </div>
+    """, unsafe_allow_html=True)
+with c2:
+    st.markdown("""
+    <div class="metric-wrap">
+        <div class="metric-label">Faults</div>
+        <div class="metric-value">4</div>
+        <div class="metric-sub">Injected</div>
+    </div>
+    """, unsafe_allow_html=True)
+with c3:
+    st.markdown("""
+    <div class="metric-wrap">
+        <div class="metric-label">Namespaces</div>
+        <div class="metric-value">2</div>
+        <div class="metric-sub">default + staging</div>
+    </div>
+    """, unsafe_allow_html=True)
+with c4:
+    st.markdown("""
+    <div class="metric-wrap">
+        <div class="metric-label">Model</div>
+        <div class="metric-value">Llama 3.3</div>
+        <div class="metric-sub">Groq Free</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-if st.session_state.quick_q:
-    prompt = st.session_state.quick_q
-    st.session_state.quick_q = None
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    with st.chat_message("assistant"):
-        with st.spinner("Analyzing cluster..."):
-            response = run_agent(prompt, st.session_state.history)
-        st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
-    st.rerun()
+st.info(issue_text)
 
-if prompt := st.chat_input("Ask about your Kubernetes cluster..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    with st.chat_message("assistant"):
+main_col, right_col = st.columns([3, 1.05], gap="large")
+
+with right_col:
+    st.markdown("""
+    <div class="soft-card">
+        <div class="section-label" style="margin-bottom:8px;">Project Status</div>
+        <div class="fault-item">• 4 injected demo faults configured</div>
+        <div class="fault-item">• Agentic kubectl diagnosis enabled</div>
+        <div class="fault-item">• Commands transparency enabled</div>
+        <div class="fault-item">• Conversation flow enabled</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with main_col:
+    if not st.session_state.messages:
+        st.markdown("""
+        <div class="welcome-card">
+            <div class="welcome-title">Ready to diagnose your cluster</div>
+            <div class="welcome-sub">
+                Ask anything in plain English. Try:
+                <br><br>
+                <em>"Which pods are not running and why?"</em><br>
+                <em>"Is broken-service routing traffic correctly?"</em><br>
+                <em>"How do I fix all the issues you found?"</em>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    for msg in st.session_state.messages:
+        if msg["role"] == "user":
+            st.markdown('<div class="chat-card">', unsafe_allow_html=True)
+            st.markdown('<div class="chat-label">You</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="chat-value">{msg["content"]}</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            render_answer(msg["content"])
+
+    def handle_prompt(prompt_text: str):
+        st.session_state.messages.append({"role": "user", "content": prompt_text})
         with st.spinner("Analyzing cluster..."):
-            response = run_agent(prompt, st.session_state.history)
-        st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+            response = run_agent(prompt_text, st.session_state.history)
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.rerun()
+
+    if st.session_state.quick_q:
+        prompt = st.session_state.quick_q
+        st.session_state.quick_q = None
+        handle_prompt(prompt)
+
+    prompt = st.chat_input("Ask about your Kubernetes cluster...")
+    if prompt:
+        handle_prompt(prompt)
+
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+        render_commands()
