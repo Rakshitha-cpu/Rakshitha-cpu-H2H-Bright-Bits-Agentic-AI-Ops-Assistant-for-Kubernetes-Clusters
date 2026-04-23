@@ -24,34 +24,36 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
     background: linear-gradient(180deg, #07111d 0%, #050b14 100%) !important;
     color: #e8f1fb !important;
 }
+[data-testid="stHeader"] { background: transparent !important; }
 section[data-testid="stSidebar"] {
     background: #08111c !important;
     border-right: 1px solid rgba(255,255,255,0.06) !important;
 }
 .block-container {
     max-width: 1450px !important;
-    padding-top: 0.9rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 4rem !important;
 }
 .hero, .soft-card, .metric-wrap, .welcome-card, .chat-card, .answer-box {
     background: linear-gradient(180deg, rgba(12,24,40,0.95), rgba(9,18,31,0.98));
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 18px;
 }
-.hero { padding: 20px 22px; margin-bottom: 16px; }
+.hero { padding: 18px 20px; margin-bottom: 14px; }
 .soft-card, .answer-box, .chat-card, .welcome-card { padding: 14px 16px; margin-bottom: 12px; }
-.metric-wrap { padding: 14px 16px; min-height: 120px; }
-.hero-title { font-size: 2.1rem; font-weight: 800; }
-.hero-sub, .welcome-sub { color: #9fb7cf !important; }
+.metric-wrap { padding: 14px 16px; min-height: 110px; }
+.hero-title { font-size: 2rem; font-weight: 800; margin: 0 0 4px 0; }
+.hero-sub { color: #9fb7cf !important; font-size: 0.96rem; }
 .section-label, .metric-label {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 800;
     color: #9fb7cf !important;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
-.metric-value { font-size: 1.95rem; font-weight: 800; margin-top: 8px; }
-.metric-sub { color: #b9cde2 !important; margin-top: 8px; font-size: 0.92rem; }
+.metric-value { font-size: 1.9rem; font-weight: 800; margin-top: 6px; }
+.metric-sub { color: #b9cde2 !important; margin-top: 8px; font-size: 0.9rem; }
 .badge-live {
     display: inline-block;
     padding: 6px 14px;
@@ -80,6 +82,8 @@ section[data-testid="stSidebar"] {
 .badge-red { background: rgba(127,29,29,0.72); color: #fca5a5 !important; }
 .badge-yellow { background: rgba(120,53,15,0.72); color: #fcd34d !important; }
 .badge-blue { background: rgba(30,64,175,0.72); color: #bfdbfe !important; }
+.welcome-title { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+.welcome-sub { color: #a6bfd8 !important; font-size: 0.92rem; line-height: 1.55; }
 .chat-label { font-size: 0.82rem; color: #9fb7cf !important; margin-bottom: 7px; font-weight: 700; }
 .chat-value { font-size: 0.98rem; line-height: 1.7; white-space: pre-wrap; }
 .answer-title { font-size: 0.94rem; font-weight: 800; margin-bottom: 8px; }
@@ -103,14 +107,12 @@ section[data-testid="stSidebar"] {
     padding: 0.8rem 0.95rem !important;
     text-align: left !important;
 }
-.stButton > button:hover {
-    border-color: rgba(56,189,248,0.45) !important;
-    color: #7dd3fc !important;
-}
 [data-testid="stChatInputContainer"] {
-    background: #0d1b2a !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 14px !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background: #07111d !important;
+    padding-top: 0.5rem !important;
+    border-top: 1px solid rgba(255,255,255,0.06) !important;
 }
 [data-testid="stChatInputContainer"] textarea {
     color: #e8f1fb !important;
@@ -383,16 +385,6 @@ with st.sidebar:
     ]:
         if st.button(q, key=f"q_{q}"):
             st.session_state.quick_q = q
-
-    st.markdown('<div class="section-label">Injected Faults</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="soft-card">
-        <div class="fault-item">• CrashLoopBackOff</div>
-        <div class="fault-item">• Pending Pod</div>
-        <div class="fault-item">• Broken Service</div>
-        <div class="fault-item">• Staging Namespace Empty</div>
-    </div>
-    """, unsafe_allow_html=True)
 
     if st.button("🗑 Clear Chat", key="clear"):
         st.session_state.messages = []
