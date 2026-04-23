@@ -143,6 +143,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, label {
 .badge-green { background: rgba(20,83,45,0.72); color: #86efac !important; }
 .badge-red { background: rgba(127,29,29,0.72); color: #fca5a5 !important; }
 .badge-yellow { background: rgba(120,53,15,0.72); color: #fcd34d !important; }
+
 .badge-blue { background: rgba(30,64,175,0.72); color: #bfdbfe !important; }
 
 .welcome-card {
@@ -291,7 +292,13 @@ def summarize_cluster():
     pods_output = safe_get_pods()
 
     if not pods_output.strip():
-        return {"running": "-", "error": "-", "pending": "-", "total": "-"}
+        return {
+            "running": 12,
+            "error": 1,
+            "pending": 1,
+            "total": 14,
+            "demo_mode": True
+        }
 
     lowered = pods_output.lower()
     if (
@@ -300,8 +307,15 @@ def summarize_cluster():
         or "server misbehaving" in lowered
         or "error from server" in lowered
         or "no such host" in lowered
+        or "the connection to the server" in lowered
     ):
-        return {"running": "-", "error": "-", "pending": "-", "total": "-"}
+        return {
+            "running": 12,
+            "error": 1,
+            "pending": 1,
+            "total": 14,
+            "demo_mode": True
+        }
 
     lines = [l for l in pods_output.strip().split("\n")[1:] if l.strip()]
 
@@ -319,6 +333,7 @@ def summarize_cluster():
         "error": error,
         "pending": pending,
         "total": total,
+        "demo_mode": False
     }
 
 
@@ -381,6 +396,20 @@ def render_answer(response: str):
 
 
 def render_commands():
+    if cluster.get("demo_mode"):
+        demo_commands = [
+            "get pods -o wide",
+            "describe pod crashloop-app",
+            "describe pod pending-pod",
+            "describe svc broken-service",
+            "get endpoints broken-service",
+            "get events --sort-by=.lastTimestamp"
+        ]
+        with st.expander("Commands Used", expanded=False):
+            for cmd in demo_commands:
+                st.code(f"kubectl {cmd}", language="bash")
+        return
+
     commands = get_last_commands()
     with st.expander("Commands Used", expanded=False):
         if commands:
@@ -390,12 +419,14 @@ def render_commands():
             st.write("No commands recorded.")
 
 
+
 cluster = summarize_cluster()
-if isinstance(cluster["error"], int) and isinstance(cluster["pending"], int):
-    issue_count = cluster["error"] + cluster["pending"]
-    issue_text = f"{issue_count} currently visible runtime issues found from live pod state."
+issue_count = cluster["error"] + cluster["pending"]
+
+if cluster.get("demo_mode"):
+    issue_text = "Demo mode enabled. Showing preconfigured Kubernetes fault scenarios for hosted deployment."
 else:
-    issue_text = "Live cluster status unavailable. Check Docker, Minikube, and kubectl connectivity."
+    issue_text = f"{issue_count} currently visible runtime issues found from live pod state."
 
 with st.sidebar:
     st.markdown("""
@@ -406,12 +437,21 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">System Status</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="soft-card">
-        <div class="fault-item">• Minikube — Online</div>
-        <div class="fault-item">• Groq LLM — Connected</div>
-    </div>
-    """, unsafe_allow_html=True)
+
+    if cluster.get("demo_mode"):
+        st.markdown("""
+        <div class="soft-card">
+            <div class="fault-item">• Demo Mode — Enabled</div>
+            <div class="fault-item">• Groq LLM — Connected</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="soft-card">
+            <div class="fault-item">• Minikube — Online</div>
+            <div class="fault-item">• Groq LLM — Connected</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Cluster Health</div>', unsafe_allow_html=True)
     st.markdown(f"""
@@ -537,22 +577,147 @@ with main_col:
             st.markdown('</div>', unsafe_allow_html=True)
         else:
             render_answer(msg["content"])
+def handle_prompt(prompt_text: str):
+    st.session_state.messages.append({"role": "user", "content": prompt_text})
 
-    def handle_prompt(prompt_text: str):
-        st.session_state.messages.append({"role": "user", "content": prompt_text})
+    if cluster.get("demo_mode"):
+        q = prompt_text.lower().strip()
+
+        if "which pods are not running" in q:
+            response = """EVIDENCE
+- crashloop-app is in a non-running or crashing state
+- pending-pod is in Pending state
+- Cluster events provide restart and scheduling evidence
+
+
+ROOT CAUSE
+The cluster has unhealthy pods because crashloop-app is crashing and pending-pod cannot be scheduled.
+
+FIX
+- Inspect crashloop-app logs and container command
+- Reduce pending-pod resource requests or increase cluster resources
+
+VERIFY
+- kubectl describe pod crashloop-app
+- kubectl describe pod pending-pod
+- kubectl get events --sort-by=.lastTimestamp
+"""
+        elif "pending" in q:
+            response = """EVIDENCE
+- Pod pending-pod is in Pending status
+- kubectl describe pod pending-pod shows scheduler failure due to insufficient resources
+- Cluster events show insufficient cpu and memory
+- Node allocatable resources are lower than the pod's requests
+
+ROOT CAUSE
+The pod pending-pod cannot be scheduled because its resource requests exceed the node's available allocatable resources.
+
+FIX
+- Reduce the cpu and memory requests of pending-pod
+- Or increase available cluster resources
+
+VERIFY
+- kubectl describe pod pending-pod
+- kubectl get events --sort-by=.lastTimestamp
+- kubectl describe node minikube
+"""
+        elif "broken-service" in q or "service working" in q:
+            response = """EVIDENCE
+- The service broken-service has selector app=nonexistent-app
+- The service has no endpoints
+- No pods match that selector
+
+ROOT CAUSE
+The service broken-service is not routing traffic because its selector does not match any existing pods.
+
+FIX
+- Update the service selector to match the intended backend pod labels
+
+VERIFY
+- kubectl describe svc broken-service
+- kubectl get endpoints broken-service
+- kubectl get pods --show-labels
+"""
+        elif "staging" in q:
+            response = """EVIDENCE
+- No deployments found in staging namespace
+- No services found in staging namespace
+- No pods found in staging namespace
+- No events found in staging namespace
+
+ROOT CAUSE
+The staging namespace is empty and has no resources deployed.
+
+FIX
+- Create deployments in the staging namespace
+- Create services in the staging namespace
+- Apply configuration to the staging namespace
+
+VERIFY
+- kubectl get deployments -n staging
+- kubectl get services -n staging
+- kubectl get pods -n staging
+- kubectl get events -n staging --sort-by=.lastTimestamp
+"""
+        elif "fix all" in q or "all issues" in q:
+            response = """EVIDENCE
+- crashloop-app is a crashing pod fault
+- pending-pod is unschedulable due to excessive resource requests
+- broken-service has no endpoints because its selector matches no pods
+- staging namespace has no deployed resources
+
+ROOT CAUSE
+The cluster contains multiple independent issues affecting pod runtime, scheduling, service routing, and namespace readiness.
+
+FIX
+- Update crashloop-app so the container does not exit with a non-zero code
+- Reduce pending-pod resource requests or increase cluster resources
+- Fix broken-service selector so it matches real pod labels
+- Deploy workloads to staging if that namespace is intended to host resources
+
+VERIFY
+- kubectl describe pod crashloop-app
+- kubectl describe pod pending-pod
+- kubectl describe svc broken-service
+- kubectl get endpoints broken-service
+- kubectl get pods -n staging
+"""
+        elif "what commands did you use" in q:
+            response = """EVIDENCE
+- kubectl get pods -o wide
+- kubectl describe pod crashloop-app
+- kubectl describe pod pending-pod
+- kubectl describe svc broken-service
+- kubectl get endpoints broken-service
+
+ROOT CAUSE
+The assistant uses recorded kubectl command history to explain how the diagnosis was produced.
+
+FIX
+- Review the commands above to understand the diagnosis flow
+
+VERIFY
+- kubectl get pods -o wide
+"""
+        else:
+            response = """EVIDENCE
+- Demo mode is enabled because a live Kubernetes cluster is not available in hosted deployment
+- The assistant supports pod failures, pending workloads, service routing faults, namespace inspection, and command transparency
+
+ROOT CAUSE
+This question is outside the strongest preconfigured hosted demo scope.
+
+FIX
+- Ask about pod health, pending workloads, broken-service, staging namespace, or issue summary
+
+VERIFY
+- kubectl get pods -o wide
+- kubectl get svc
+- kubectl get events --sort-by=.lastTimestamp
+"""
+    else:
         with st.spinner("Analyzing cluster..."):
             response = run_agent(prompt_text, st.session_state.history)
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        st.rerun()
 
-    if st.session_state.quick_q:
-        prompt = st.session_state.quick_q
-        st.session_state.quick_q = None
-        handle_prompt(prompt)
-
-    prompt = st.chat_input("Ask about your Kubernetes cluster...")
-    if prompt:
-        handle_prompt(prompt)
-
-    if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
-        render_commands()
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.rerun()
