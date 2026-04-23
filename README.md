@@ -183,14 +183,13 @@ https://drive.google.com/file/d/1FvAC8UcCVXywcAdCk0zvF85PQiUxkZMy/view?usp=drive
 ## 📸 Screenshots
 
 ### Web UI Dashboard
-![Dashboard](screenshots/dashboard.png)
+<img width="1449" height="793" alt="dashboard" src="https://github.com/user-attachments/assets/75d10cdd-7b48-441d-8579-1d8368e9d58d" />
 
 ### AI Diagnosis in Action
-![Diagnosis](screenshots/diagnosis.png)
+<img width="1805" height="843" alt="diagnose" src="https://github.com/user-attachments/assets/6c36edd3-d03a-4876-92e5-279245e9924c" />
 
 ### Cluster Status Sidebar
-![Sidebar](screenshots/sidebar.png)
-
+<img width="384" height="636" alt="cluster health" src="https://github.com/user-attachments/assets/d53528ce-4947-4dbb-9992-2c9c5a6c435c" />
 
 ### pods
 <img width="1910" height="783" alt="pods" src="https://github.com/user-attachments/assets/29d49aa1-f809-4ddf-b5e3-410c8a94c7a3" />
