@@ -1,8 +1,13 @@
-import streamlit as st
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'agent'))
 
-from agent.agent import run_agent, run_kubectl, get_last_commands
+import streamlit as st
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from agent import run_agent, run_kubectl, get_last_commands
 
 st.set_page_config(
     page_title="K8s AI Ops Assistant",
