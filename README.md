@@ -171,13 +171,12 @@ python3 -m streamlit run ui/app.py
 ```
 
 ### Step 8 — Open Browser
-http://localhost:8501
+http://localhost:8504
 
 ---
 
 ## 🎥 Demo Video
-
-
+https://drive.google.com/file/d/1FvAC8UcCVXywcAdCk0zvF85PQiUxkZMy/view?usp=drivesdk
 
 ---
 
@@ -191,6 +190,13 @@ http://localhost:8501
 
 ### Cluster Status Sidebar
 ![Sidebar](screenshots/sidebar.png)
+
+
+### pods
+<img width="1910" height="783" alt="pods" src="https://github.com/user-attachments/assets/29d49aa1-f809-4ddf-b5e3-410c8a94c7a3" />
+
+### commands
+<img width="1039" height="385" alt="commands" src="https://github.com/user-attachments/assets/c61c7286-aa8e-4c31-b35a-4fae7ffd2551" />
 
 ---
 
@@ -221,32 +227,47 @@ AI:  Complete fix guide for all 3 issues found
 
 ---
 
-## Transparency Logging
+## 📝 Transparency Logging
+
+The assistant keeps the diagnosis process transparent by logging:
+- user queries
+- selected kubectl commands
+- tool outputs
+- final diagnosis summaries
+
+This makes the workflow easier to verify, debug, and trust.
+
+Example log flow:
 
 ```text
-2026-04-19 10:23:01 - USER QUERY: Which pods are not running?
-2026-04-19 10:23:01 - TOOL CALL: kubectl get pods
-2026-04-19 10:23:02 - TOOL RESULT: NAME READY STATUS...
-2026-04-19 10:23:03 - FINAL ANSWER: Two pods not running.
+2026-04-19 10:23:01 | USER QUERY >>> Which pods are not running?
+2026-04-19 10:23:01 | PLANNED COMMANDS >>> ['get pods -o wide', 'describe pod crashloop-app', 'describe pod pending-pod', 'get events --sort-by=.lastTimestamp']
+2026-04-19 10:23:02 | TOOL CALL >>> kubectl get pods -o wide
+2026-04-19 10:23:02 | TOOL RESULT >>> NAME READY STATUS RESTARTS AGE ...
+2026-04-19 10:23:03 | FINAL ANSWER >>> The cluster has unhealthy pods because crashloop-app is crashing and pending-pod cannot be scheduled.
 ```
-
 ---
-## Project Structure
-
-```text
+```
+📂 Project Structure
+.
 ├── agent/
-│   └── agent.py            # AI agent ReAct loop
+│   ├── __init__.py
+│   └── agent.py
 ├── cluster/
-│   └── setup.sh            # Cluster setup script
+│   └── setup.sh
 ├── faults/
-│   └── faults.yaml         # Contains 4 injected faults
+│   └── faults.yaml
 ├── logs/
-│   └── agent.log           # Transparency and execution logs
+│   └── agent.log
+├── screenshots/
+│   ├── dashboard.png
+│   ├── diagnosis.png
+│   └── sidebar.png
 ├── ui/
-│   └── app.py              # Streamlit web interface
-├── README.md               # Project documentation
-├── report.md               # One-page project write-up
-└── requirements.txt        # Python dependencies
+│   └── app.py
+├── README.md
+├── report.md
+└── requirements.txt
 ```
 ---
 
@@ -294,6 +315,8 @@ flowchart TD
 ---
 
 ## 🌐 Deployed Link
+Public hosted demo of the project interface.  
+For full real-time Kubernetes diagnosis, use the localhost version connected to the live Minikube cluster.
 https://e7d22gwtb565qppfvaxw3i.streamlit.app/
 
 ---
@@ -301,3 +324,6 @@ https://e7d22gwtb565qppfvaxw3i.streamlit.app/
 ## 📄 License
 
 MIT License — H2H Bright Bits Hackathon 2026
+---
+⭐ Support
+If this project helped you or you find it interesting, please consider giving it a ⭐ — it means a lot!
