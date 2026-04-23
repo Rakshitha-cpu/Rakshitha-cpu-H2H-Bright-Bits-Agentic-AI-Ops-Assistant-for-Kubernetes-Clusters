@@ -177,7 +177,7 @@ http://localhost:8501
 
 ## 🎥 Demo Video
 
-[▶️ Watch Demo on YouTube](#) ← add your link here
+
 
 ---
 
@@ -294,8 +294,7 @@ flowchart TD
 ---
 
 ## 🌐 Deployed Link
-
-[Live Demo →](#) ← add your deployed URL here
+https://e7d22gwtb565qppfvaxw3i.streamlit.app/
 
 ---
 
